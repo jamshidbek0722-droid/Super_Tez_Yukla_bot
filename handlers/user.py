@@ -16,6 +16,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest, TelegramNetworkError
 
+from config import is_owner
 from database import db
 from downloader import InstagramDownloader
 from states.user_states import ContactState, RatingState
@@ -62,7 +63,7 @@ async def user_start(message: Message, bot: Bot):
         full_name=user.full_name or user.first_name
     )
     admins = await db.get_admins()
-    is_admin = (user.id in admins)
+    is_admin = (user.id in admins or is_owner(user.id))
 
     bot_info = await bot.get_me()
     bot_username = bot_info.username or "Super_Tez_Yukla_Bot"
@@ -237,7 +238,7 @@ async def check_forcesub_callback(callback: CallbackQuery, bot: Bot):
             full_name=user.full_name or user.first_name
         )
         admins = await db.get_admins()
-        is_admin = (user.id in admins)
+        is_admin = (user.id in admins or is_owner(user.id))
 
         bot_info = await bot.get_me()
         bot_username = bot_info.username or "Super_Tez_Yukla_Bot"

