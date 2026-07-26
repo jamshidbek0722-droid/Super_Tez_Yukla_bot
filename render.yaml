@@ -1,0 +1,21 @@
+services:
+  - type: worker
+    name: Super_Tez_Yukla_Bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: OWNER_ID
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: RAPIDAPI_HOST
+        value: instagram120.p.rapidapi.com
+      - key: RAPIDAPI_URL
+        value: https://instagram120.p.rapidapi.com/api/instagram/links
+      - key: YOUTUBE_RAPIDAPI_KEY
+        sync: false
+      - key: YOUTUBE_RAPIDAPI_HOST
+        value: youtube138.p.rapidapi.com
